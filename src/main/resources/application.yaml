@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: ledger
+
+server:
+  port: 8080
+
