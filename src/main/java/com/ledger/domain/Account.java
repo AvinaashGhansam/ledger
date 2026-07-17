@@ -7,10 +7,10 @@ public class Account {
   private final Currency currency;
   private final String name;
 
-  public Account(AccountId id, Currency currency, String name) {
+  public Account(AccountId id, String name, Currency currency) {
     Objects.requireNonNull(id, "[id] should not be null");
-    Objects.requireNonNull(currency, "[currency] should not be null");
     Objects.requireNonNull(name, "[name] should not be null");
+    Objects.requireNonNull(currency, "[currency] should not be null");
 
     this.id = id;
     this.currency = currency;
@@ -23,6 +23,10 @@ public class Account {
 
   public Currency currency() {
     return currency;
+  }
+
+  public String name() {
+    return name;
   }
 
   // An Account is an Entity. Its identity is its AccountId. Two Accounts are the same iff their ids
