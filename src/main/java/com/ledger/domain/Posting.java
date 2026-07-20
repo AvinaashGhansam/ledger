@@ -47,6 +47,11 @@ public final class Posting {
 
   public static Result<Posting, PostingError> create(
       PostingId id, Instant occurredAt, String description, List<Entry> entries) {
+    Objects.requireNonNull(id, "[id] cannot be null");
+    Objects.requireNonNull(occurredAt, "[occurredAt] cannot be null");
+    Objects.requireNonNull(description, "[description] cannot be null");
+    Objects.requireNonNull(entries, "[entries] cannot be null");
+
     if (entries.size() < 2) {
       return Result.err(new PostingError.TooFewEntries(entries.size()));
     }
@@ -93,5 +98,24 @@ public final class Posting {
 
   public List<Entry> entries() {
     return entries;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    Posting posting = (Posting) o;
+    // Identity Equality: Aggregate Roots are equal if their IDs match.
+    return id.equals(posting.id);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(id);
+  }
+
+  @Override
+  public String toString() {
+    return "Posting{id=" + id.value() + ", description='" + description + "'}";
   }
 }
