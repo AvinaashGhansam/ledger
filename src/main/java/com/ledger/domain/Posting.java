@@ -18,10 +18,20 @@ public final class Posting {
 
     List<Entry> entryCopy = List.copyOf(entries);
 
+    if (entryCopy.size() < 2) {
+      throw new IllegalStateException("Programmer error: posting must have at least two entries");
+    }
+
     Currency expected = entryCopy.getFirst().amount().currency();
 
-    Money zero = Money.zero(expected);
+    for (Entry entry : entryCopy) {
+      if (!entry.amount().currency().equals(expected)) {
+        throw new IllegalStateException(
+            "Programmer error: attempted to construct a mixed-currency Posting");
+      }
+    }
 
+    Money zero = Money.zero(expected);
     Money sum = entryCopy.stream().map(Entry::amount).reduce(zero, Money::plus);
 
     if (!sum.isZero()) {
