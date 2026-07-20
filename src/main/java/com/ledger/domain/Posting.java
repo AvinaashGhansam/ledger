@@ -22,7 +22,7 @@ public final class Posting {
 
     Money zero = Money.zero(expected);
 
-    Money sum = entries.stream().map(Entry::amount).reduce(zero, Money::plus);
+    Money sum = entryCopy.stream().map(Entry::amount).reduce(zero, Money::plus);
 
     if (!sum.isZero()) {
       throw new IllegalStateException(
@@ -67,5 +67,21 @@ public final class Posting {
         .filter((acc) -> acc.account().equals(requestedAccount))
         .map(Entry::amount)
         .reduce(zero, Money::plus);
+  }
+
+  public PostingId id() {
+    return id;
+  }
+
+  public Instant occurredAt() {
+    return occurredAt;
+  }
+
+  public String description() {
+    return description;
+  }
+
+  public List<Entry> entries() {
+    return entries;
   }
 }
