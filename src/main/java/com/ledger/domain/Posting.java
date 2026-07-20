@@ -18,11 +18,11 @@ public final class Posting {
 
     List<Entry> entryCopy = List.copyOf(entries);
 
-    Currency currency = entryCopy.getFirst().amount().currency();
+    Currency expected = entryCopy.getFirst().amount().currency();
 
-    Money zero = Money.of(0, currency);
+    Money zero = Money.zero(expected);
 
-    Money sum = entryCopy.stream().map(Entry::amount).reduce(zero, Money::plus);
+    Money sum = entries.stream().map(Entry::amount).reduce(zero, Money::plus);
 
     if (!sum.isZero()) {
       throw new IllegalStateException(
@@ -33,5 +33,39 @@ public final class Posting {
     this.occurredAt = occurredAt;
     this.description = description;
     this.entries = entryCopy;
+  }
+
+  public static Result<Posting, PostingError> create(
+      PostingId id, Instant occurredAt, String description, List<Entry> entries) {
+    if (entries.size() < 2) {
+      return Result.err(new PostingError.TooFewEntries(entries.size()));
+    }
+
+    Currency expected = entries.getFirst().amount().currency();
+    for (Entry entry : entries) {
+      if (!entry.amount().currency().equals(expected)) {
+        return Result.err(new PostingError.CurrencyMismatch(expected, entry.amount().currency()));
+      }
+    }
+
+    Money zero = Money.zero(expected);
+
+    Money sum = entries.stream().map(Entry::amount).reduce(zero, Money::plus);
+
+    if (!sum.isZero()) {
+      return Result.err(new PostingError.Unbalanced(sum));
+    }
+
+    return Result.ok(new Posting(id, occurredAt, description, entries));
+  }
+
+  public Money balanceFor(AccountId requestedAccount) {
+    Currency expected = this.entries.getFirst().amount().currency();
+    Money zero = Money.zero(expected);
+
+    return this.entries.stream()
+        .filter((acc) -> acc.account().equals(requestedAccount))
+        .map(Entry::amount)
+        .reduce(zero, Money::plus);
   }
 }

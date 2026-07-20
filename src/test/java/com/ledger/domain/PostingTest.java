@@ -1,0 +1,92 @@
+package com.ledger.domain;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.time.Instant;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+
+class PostingTest {
+  // ---SETUP FIXTURE---
+  private final Currency usd = Currency.of("USD");
+  private final Currency eur = Currency.of("EUR");
+
+  private final AccountId checkingId = AccountId.of(AccountId.generate().value());
+  private final AccountId savingsId = AccountId.of(AccountId.generate().value());
+
+  private final PostingId postingId = PostingId.of(PostingId.generate().value());
+  private final Instant now = Instant.now();
+
+  @Test
+  void create_singleEntry_returnsErrTooFewEntries() {
+    // Arrange
+    Entry signleEntry = Entry.of(checkingId, Money.of(100, usd));
+
+    // Act
+    Result<Posting, PostingError> result =
+        Posting.create(postingId, now, "Test", List.of(signleEntry));
+
+    // Assert
+    assertThat(result).isInstanceOf(Result.Err.class);
+    Result.Err<Posting, PostingError> err = (Result.Err<Posting, PostingError>) result;
+    assertThat(err.error()).isInstanceOf(PostingError.TooFewEntries.class);
+  }
+
+  @Test
+  void create_mixedCurrencies_returnsErrCurrencyMismatch() {
+    // Arrange
+    Entry e1 = Entry.of(checkingId, Money.of(100, usd));
+    Entry e2 = Entry.of(checkingId, Money.of(100, eur));
+
+    // Act
+    Result<Posting, PostingError> result = Posting.create(postingId, now, "Test", List.of(e1, e2));
+
+    // Assert
+    assertThat(result).isInstanceOf(Result.Err.class);
+    Result.Err<Posting, PostingError> err = (Result.Err<Posting, PostingError>) result;
+    assertThat(err.error()).isInstanceOf(PostingError.CurrencyMismatch.class);
+  }
+
+  @Test
+  void create_unbalancedEntries_returnErrUnBalanced() {
+    // Arrange
+    Entry debit = Entry.of(checkingId, Money.of(100, usd));
+    Entry credit = Entry.of(savingsId, Money.of(102, usd));
+
+    // Act
+    Result<Posting, PostingError> result =
+        Posting.create(postingId, now, "Test", List.of(debit, credit));
+
+    // Assert
+    assertThat(result).isInstanceOf(Result.Err.class);
+    Result.Err<Posting, PostingError> err = (Result.Err<Posting, PostingError>) result;
+    assertThat(err.error()).isInstanceOf(PostingError.Unbalanced.class);
+
+    PostingError.Unbalanced unbalancedErr = (PostingError.Unbalanced) err.error();
+    assertThat(unbalancedErr.residual()).isEqualTo(Money.of(202, usd));
+  }
+
+  @Test
+  void create_balancedEntries_returnOk() {
+    // Arrange
+    Entry debit = Entry.of(checkingId, Money.of(-100, usd));
+    Entry credit = Entry.of(savingsId, Money.of(100, usd));
+
+    // Act
+    Result<Posting, PostingError> result =
+        Posting.create(postingId, now, "Transfer to savings", List.of(debit, credit));
+
+    // Assert
+    assertThat(result).isInstanceOf(Result.Ok.class);
+
+    Result.Ok<Posting, PostingError> okResult = (Result.Ok<Posting, PostingError>) result;
+    Posting posting = okResult.value();
+
+    assertThat(posting.balanceFor(checkingId)).isEqualTo(Money.of(-100, usd));
+    assertThat(posting.balanceFor(savingsId)).isEqualTo(Money.of(100, usd));
+
+    AccountId randomId = AccountId.of(AccountId.generate().value());
+    assertThat(posting.balanceFor(randomId)).isEqualTo(Money.zero(usd));
+  }
+}

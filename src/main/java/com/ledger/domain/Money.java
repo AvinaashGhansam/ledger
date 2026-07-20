@@ -34,6 +34,10 @@ public record Money(long amount, Currency currency) {
     return new Money(amount, currency);
   }
 
+  public static Money zero(Currency currency) {
+    return Money.of(0, currency);
+  }
+
   private void assertSameCurrency(Money other) {
     if (!this.currency().equals(other.currency())) {
       throw new IllegalArgumentException(
