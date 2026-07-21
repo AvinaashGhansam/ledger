@@ -4,18 +4,12 @@ import java.util.List;
 import java.util.Objects;
 
 public class Ledger {
-  public static Money balance(List<Posting> postings, AccountId expected) {
+  public static Money balance(List<Posting> postings, Account targetAccount) {
     Objects.requireNonNull(postings, "[postings] cannot be null");
-    Objects.requireNonNull(expected, "[accountId] cannot be null");
-
-    if (postings.isEmpty()) {
-      throw new IllegalStateException("Cannot evaluate balance for empty posting list");
-    }
-
-    Currency currency = postings.getFirst().entries().getFirst().amount().currency();
+    Objects.requireNonNull(targetAccount, "[targetAccount] cannot be null");
 
     return postings.stream()
-        .map(posting -> posting.balanceFor(expected))
-        .reduce(Money.zero(currency), Money::plus);
+        .map(posting -> posting.balanceFor(targetAccount.id()))
+        .reduce(Money.zero(targetAccount.currency()), Money::plus);
   }
 }

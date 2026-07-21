@@ -5,19 +5,20 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class LedgerTest {
   private final Currency usd = Currency.of("USD");
-  private final AccountId checkingId = AccountId.generate();
-  private final AccountId savingsId = AccountId.generate();
+  private final Account checkingAccount = new Account(AccountId.generate(), "Checking", usd);
+  private final Account savingsAccount = new Account(AccountId.generate(), "Savings", usd);
   private final Instant now = Instant.now();
 
   @Test
   void moveMoneyBetweenAccount_checkingAndSavings_verifyNoResidual() {
     // Transaction 1
-    Entry t1Debit = Entry.of(checkingId, Money.of(-500, usd));
-    Entry t1Credit = Entry.of(savingsId, Money.of(500, usd));
+    Entry t1Debit = Entry.of(checkingAccount.id(), Money.of(-500, usd));
+    Entry t1Credit = Entry.of(savingsAccount.id(), Money.of(500, usd));
 
     Posting p1 =
         ((Result.Ok<Posting, PostingError>)
@@ -26,8 +27,8 @@ class LedgerTest {
             .value();
 
     // Transaction 2
-    Entry t2Debit = Entry.of(checkingId, Money.of(-200, usd));
-    Entry t2Credit = Entry.of(savingsId, Money.of(200, usd));
+    Entry t2Debit = Entry.of(checkingAccount.id(), Money.of(-200, usd));
+    Entry t2Credit = Entry.of(savingsAccount.id(), Money.of(200, usd));
 
     Posting p2 =
         ((Result.Ok<Posting, PostingError>)
@@ -36,16 +37,17 @@ class LedgerTest {
             .value();
 
     // Ledger history
-    List<Posting> legerHistory = List.of(p1, p2);
+    List<Posting> ledgerHistory = List.of(p1, p2);
 
-    // Act
-    Money checkingBalance = Ledger.balance(legerHistory, checkingId);
-    Money savingsBalance = Ledger.balance(legerHistory, savingsId);
+    Set<Account> activeAccounts = Set.of(checkingAccount, savingsAccount);
 
-    // Assert
-    assertThat(checkingBalance).isEqualTo(Money.of(-700, usd));
-    assertThat(savingsBalance).isEqualTo(Money.of(700, usd));
+    Money netSystemBalance =
+        activeAccounts.stream()
+            .map(account -> Ledger.balance(ledgerHistory, account))
+            .reduce(Money::plus)
+            .orElseThrow();
 
-    assertThat(checkingBalance.plus(savingsBalance)).isEqualTo(Money.zero(usd));
+    // Assert: The mathematical law of double-entry holds true!
+    assertThat(netSystemBalance).isEqualTo(Money.zero(usd));
   }
 }

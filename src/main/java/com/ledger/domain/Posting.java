@@ -111,7 +111,7 @@ public final class Posting {
 
   @Override
   public int hashCode() {
-    return Objects.hash(id);
+    return Objects.hashCode(id);
   }
 
   @Override

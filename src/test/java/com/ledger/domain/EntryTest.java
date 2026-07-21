@@ -2,14 +2,13 @@ package com.ledger.domain;
 
 import static org.assertj.core.api.Assertions.*;
 
-import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 class EntryTest {
   @Test
   void of_validAccountAmount_createEntrySuccessfully() {
     // Arrange
-    AccountId accountId = AccountId.of(AccountId.generate().value());
+    AccountId accountId = AccountId.generate();
     Money amount = Money.of(100, Currency.of("USD"));
 
     // Act
@@ -23,8 +22,7 @@ class EntryTest {
   @Test
   void of_zeroAmount_throwsException() {
     // Arrange
-    UUID id = AccountId.generate().value();
-    AccountId checking = AccountId.of(id);
+    AccountId checking = AccountId.generate();
     Money zeroBucks = Money.of(0, Currency.of("USD"));
     // Act & Assert
     assertThatThrownBy(() -> Entry.of(checking, zeroBucks))
@@ -34,8 +32,7 @@ class EntryTest {
   @Test
   void equals_sameAccountAndAmount_returnTrue() {
     // Arrange
-    UUID id = AccountId.generate().value();
-    AccountId checking = AccountId.of(id);
+    AccountId checking = AccountId.generate();
 
     Entry e1 = Entry.of(checking, Money.of(50, Currency.of("USD")));
     Entry e2 = Entry.of(checking, Money.of(50, Currency.of("USD")));

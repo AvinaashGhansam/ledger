@@ -74,4 +74,24 @@ class PostingTest {
     AccountId randomId = AccountId.generate();
     assertThat(posting.balanceFor(randomId)).isEqualTo(Money.zero(usd));
   }
+
+  @Test
+  void equals_twoObjects_returnsSameHashCode() {
+    // Assert
+    Entry debit = Entry.of(checkingId, Money.of(-100, usd));
+    Entry credit = Entry.of(savingsId, Money.of(100, usd));
+
+    PostingId id = PostingId.generate();
+
+    Result<Posting, PostingError> p1 =
+        Posting.create(id, now, "Transfer to savings", List.of(debit, credit));
+    Result<Posting, PostingError> p2 =
+        Posting.create(id, now, "Transfer to savings", List.of(debit, credit));
+
+    Posting posting1 = ((Result.Ok<Posting, PostingError>) p1).value();
+    Posting posting2 = ((Result.Ok<Posting, PostingError>) p2).value();
+
+    // Act & Assert
+    assertThat(posting1.hashCode()).isEqualTo(posting2.hashCode());
+  }
 }
