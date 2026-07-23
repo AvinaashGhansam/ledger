@@ -3,7 +3,6 @@ package com.ledger.adapter.persistence;
 import com.ledger.application.port.out.AccountRepository;
 import com.ledger.domain.Account;
 import com.ledger.domain.AccountId;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,6 +25,6 @@ public class InMemoryAccountRepository implements AccountRepository {
 
   @Override
   public List<Account> findAll() {
-    return new ArrayList<>(store.values());
+    return List.copyOf(store.values());
   }
 }
