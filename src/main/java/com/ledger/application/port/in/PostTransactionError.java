@@ -8,9 +8,9 @@ public sealed interface PostTransactionError
     permits PostTransactionError.UnknownAccount,
         PostTransactionError.AccountCurrencyMismatch,
         PostTransactionError.InvalidPosting {
-  record UnknownAccount(AccountId id) implements PostTransactionError {}
+  record UnknownAccount(AccountId accountId) implements PostTransactionError {}
 
-  record AccountCurrencyMismatch(AccountId id, Currency expected, Currency actual)
+  record AccountCurrencyMismatch(AccountId accountId, Currency expected, Currency actual)
       implements PostTransactionError {}
 
   record InvalidPosting(PostingError error) implements PostTransactionError {}
