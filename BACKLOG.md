@@ -17,3 +17,11 @@ Non-blocking findings raised during LSB-1 review. None of these gate a rung's ad
 3. **B2 proves net-zero, not per-account correctness.** *(Small — test quality.)*
 
    The conservation test proves the *sum* across all accounts nets to zero, but that property can hold even if the per-account math is symmetrically wrong (e.g. checking and savings both off by the same amount in opposite directions). Strengthen it to also assert each account's individual balance directly — checking is `-700`, savings is `+700` — before summing them. Net-zero is the weaker check; both together is the real proof.
+
+## Cross-repo — raised from LCX-5 (frontend, 2026-09-08)
+
+1. **`AccountDto` has no `type` field, so debit/credit can't be derived from account type.** *(Deferred to LSB-2 — structural, needs an `AccountType` field before this closes.)*
+
+   Frontend flagged that a transfer always shows the "from" account as DEBIT and the "to" account as CREDIT, regardless of what kind of account either side is. Root cause: the mock (`ledgerline-console`'s `src/mocks/handlers.ts` POST `/api/postings`, and `fixtures.ts`'s seed data) uses the bank-statement convention — money-out leg = DEBIT + `balance -= amount`, money-in leg = CREDIT + `balance += amount` — flat, with no account-type awareness. Real general-ledger double-entry assigns debit/credit from the account's type and normal balance (Asset/Expense: debit increases; Liability/Equity/Revenue: credit increases), and every posting must satisfy Σdebits == Σcredits.
+
+   Needs: an `AccountType` field on the account model (and its DTO), `direction` derived from `(type, increase|decrease)` instead of hardcoded per leg, and a balanced-postings invariant enforced server-side. Until then this is a known simplification, not a bug in the mock — the frontend just renders whatever `direction` the API returns. Optional frontend-side cosmetic (deferred, non-blocking): relabel `DirectionBadge` to "Out / In" to match the convention the mock data actually follows, rather than implying real double-entry semantics it doesn't have yet.
